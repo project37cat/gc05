@@ -25,19 +25,21 @@
 #define INV_BIT(reg, bit)  reg ^= (1<<bit)
 
 
+#define BATT_LEVEL_3 90 //9,0В //уровни индикатора раззаряда батареи
+#define BATT_LEVEL_2 83 //8,3В
+#define BATT_LEVEL_1 77 //7,7В
+
+
 #include "display.h"
 
 
+#define BATTERY_LOW 60 //минимальное напряжение 6.0В
 #define VOLT_FACT_1 11 //поправки для напряжения
 #define VOLT_FACT_2 65
 #define TEMP_FACT 315 //поправка для температуры
 #define LIGHT_TIME 10 //время автовыключения подсветки 10 секунд
 #define FAIL_TIME 40 //нулевой фон более 40 секунд значит отказ железа
 #define HVGEN_FREQ 20 //частота подкачки 100/20=5Гц
-#define BATTERY_LOW 60 //минимальное напряжение 6.0В
-#define BATT_LEVEL_3 90 //9,0В //уровни индикатора раззаряда батареи
-#define BATT_LEVEL_2 83 //8,3В
-#define BATT_LEVEL_1 77 //7,7В
 #define GEIGER_TIME 75 //время измерения 75 секунд для СИ29БГ
 #define GRAPH_FACT 30 //скорость движения гистограммы 1..30 секунд
 #define BUZZ_1K 120 //125k/120 ~1kHz
@@ -184,16 +186,6 @@ PGM_P const MsgStr[] PROGMEM =
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-const uint8_t BattIcon[4][16] PROGMEM = //значки состояния батареи
-{
-  { 0x38,0xFE,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0xFE },
-  { 0x38,0xFE,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0x82,0xBA,0xBA,0xBA,0x82,0xFE },
-  { 0x38,0xFE,0x82,0x82,0x82,0x82,0x82,0xBA,0xBA,0xBA,0x82,0xBA,0xBA,0xBA,0x82,0xFE },
-  { 0x38,0xFE,0x82,0xBA,0xBA,0xBA,0x82,0xBA,0xBA,0xBA,0x82,0xBA,0xBA,0xBA,0x82,0xFE }
-};
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void system_init(void);
 void system_sleep(void);
@@ -205,7 +197,6 @@ void light_set(void);
 void delay_ms(uint8_t val);
 void delay_us(uint8_t val);
 void hvgen_impuls(void);
-void draw_battery(void);
 void reset_backrad(void);
 void reset_menu(void);
 void system_menu(void);
