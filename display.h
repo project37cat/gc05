@@ -28,7 +28,7 @@ void lcd_write(uint8_t mode, uint8_t data);
 void lcd_data(uint8_t data);
 void lcd_command(uint8_t command);
 void lcd_init(void);
-void lcd_goto(uint8_t line, uint8_t row);
+void lcd_goto(uint8_t str, uint8_t row);
 void lcd_clear(void);
 void lcd_char(uint8_t sign, uint8_t vPos, uint8_t hPos);
 void lcd_string(uint8_t vPos, uint8_t hPos, char *str);
@@ -39,6 +39,7 @@ void graph_clear(void);
 void graph_print(uint8_t vPos, uint8_t *buff, uint8_t dev);
 void graph_write(uint8_t vPos);
 
+void draw_battery(uint8_t str, uint8_t row, uint8_t volt);
 void draw_char_line(uint8_t vPos, uint8_t Char);
 void draw_marker(uint8_t vPos, uint8_t Set);
 void draw_cursor(uint8_t vPos, uint8_t numStr);
@@ -106,10 +107,10 @@ lcd_command(0x0C); // Display control: normal (inverted = 0x0D)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void lcd_goto(uint8_t line, uint8_t row)  //линия (строка) 0..7 //ряд (пикселей) 0..100
+void lcd_goto(uint8_t str, uint8_t row)  //линия (строка) 0..7 //ряд (пикселей) 100..0
 {
 lcd_command(0x28);
-lcd_command(0x40+line);
+lcd_command(0x40+str);
 lcd_command(0x80+row);
 }
 
@@ -207,6 +208,21 @@ lcd_goto(vPos,0);
 for(uint8_t k=0; k<101; k++) lcd_data(GraphBuff[0][k]);
 lcd_goto(vPos-1,0);
 for(uint8_t k=0; k<101; k++) lcd_data(GraphBuff[1][k]);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void draw_battery(uint8_t str, uint8_t row, uint8_t volt) //индикатор батареи  //0..7  //100..0
+{
+lcd_goto(str,row); //позиция на экране
+
+for(uint8_t i=0; i<16; i++)
+	{
+	if(volt>BATT_LEVEL_3) lcd_data(pgm_read_byte_near(&BattIcon[3][i]));
+	else if(volt>BATT_LEVEL_2) lcd_data(pgm_read_byte_near(&BattIcon[2][i]));
+	else if(volt>BATT_LEVEL_1) lcd_data(pgm_read_byte_near(&BattIcon[1][i]));
+	else lcd_data(pgm_read_byte_near(&BattIcon[0][i]));
+	}
 }
 
 
