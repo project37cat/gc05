@@ -18,7 +18,7 @@ if(PWROFF_IS_CLR) //если флаг выключения не поднят
 	if(RadImp[0]!=65535) RadImp[0]++; //считаем импульсы
 	if(GraphImp[0]!=255) GraphImp[0]++;
 	//если общая сумма импульсов больше дозы 999999 мкР то переполнение
-	if(++SumImp>(uint64_t)999999*3600/GEIGER_TIME) SumImp=(uint64_t)999999*3600/GEIGER_TIME;
+	if(++SumImp>999999UL*3600/GEIGER_TIME) SumImp=999999UL*3600/GEIGER_TIME;
 
 	hvgen_impuls(); //подкачка преобразователя
 
@@ -317,8 +317,7 @@ if(BattVolt < BATTERY_LOW) //если напряжение ниже рабоче
 	{
 	lcd_clear();
 
-	lcd_goto(1,50); //нарисуем значок разряженной батарейки
-	for(uint8_t i=0; i<16; i++) lcd_data(pgm_read_byte_near(&BattIcon[0][i]));
+	draw_battery(1,48,0); //нарисуем значок разряженной батарейки
 
 	strcpy_P(StrBuff,(PGM_P)pgm_read_word(&MsgStr[0])); //выводим сообщение о разряде
 	lcd_string(4,3,StrBuff);
@@ -445,23 +444,6 @@ BackRad=0;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void draw_battery(void) //рисуем индикатор батареи
-{
-uint8_t BattBuff = BattVolt;
-
-lcd_goto(0,84); //в правый верхний угол экрана
-
-for(uint8_t i=0; i<16; i++)
-	{
-	if(BattBuff>BATT_LEVEL_3) lcd_data(pgm_read_byte_near(&BattIcon[3][i]));
-	else if(BattBuff>BATT_LEVEL_2) lcd_data(pgm_read_byte_near(&BattIcon[2][i]));
-	else if(BattBuff>BATT_LEVEL_1) lcd_data(pgm_read_byte_near(&BattIcon[1][i]));
-	else lcd_data(pgm_read_byte_near(&BattIcon[0][i]));
-	}
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 void system_menu(void) //меню настроек
 {
 uint8_t currStr = 0; //номер выбранной строки 0..7
@@ -583,7 +565,7 @@ void main_screen(uint8_t dev) //рисуем главный экран
 check_battery();
 check_sysfail();
 
-draw_battery(); //индикатор батареи
+draw_battery(0,84,BattVolt); //индикатор батареи
 
 sprintf(StrBuff,"%02u:%02u:%02u",TimeHrs,TimeMin,TimeSec); //время работы
 lcd_string(1,5,StrBuff);
@@ -595,7 +577,7 @@ lcd_char(144,3,1);
 sprintf(StrBuff,"%6lu Max.",MaxRad); //максимальный зарегистрированный фон
 lcd_string(3,2,StrBuff);
 
-if(ALARM_IS_STARTED)lcd_char(147,4,1); //если тревога рисуем значок "два восклицательных знака"
+if(ALARM_IS_STARTED) lcd_char(147,4,1); //если тревога рисуем значок "два восклицательных знака"
 else lcd_char(144,4,1); //иначе значок "треугольник-указатель влево"
 sprintf(StrBuff,"%6lu µR/h",BackRad); //фон
 lcd_string(4,2,StrBuff);
