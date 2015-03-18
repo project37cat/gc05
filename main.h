@@ -26,8 +26,8 @@
 
 
 #define BATT_LEVEL_3 90 //9,0В //уровни индикатора раззаряда батареи
-#define BATT_LEVEL_2 83 //8,3В
-#define BATT_LEVEL_1 77 //7,7В
+#define BATT_LEVEL_2 84 //8,4В
+#define BATT_LEVEL_1 78 //7,8В
 
 
 #include "display.h"
@@ -90,10 +90,8 @@ uint8_t SigTmr; //таймер для формирования звуковых 
 uint8_t ButStat; //состояние кнопок
 uint8_t But1Time = BUTT_TIME_DEF; //длительность проверки на удержание кнопки
 uint8_t But2Time = BUTT_TIME_DEF;
-uint8_t But1Cnt; //таймер-счетчик для кнопки 1
-uint8_t But2Cnt; //таймер-счетчик для кнопки 2
 
-uint8_t SoundVol = 5; //громкость звуковых сигналов
+uint8_t SoundVol = 3; //громкость звуковых сигналов
 uint8_t AlarmLvl = 40; //порог тревоги
 
 
@@ -178,7 +176,7 @@ const char MsgStr03[] PROGMEM = "H/W ERROR";
 const char MsgStr04[] PROGMEM = "NO IMPULSES";
 const char MsgStr05[] PROGMEM = "Geiger";
 const char MsgStr06[] PROGMEM = "Counter";
-const char MsgStr07[] PROGMEM = "058 2015";
+const char MsgStr07[] PROGMEM = "v05 2015";
 const char MsgStr08[] PROGMEM = "shutdown";
 
 PGM_P const MsgStr[] PROGMEM =
@@ -188,7 +186,7 @@ PGM_P const MsgStr[] PROGMEM =
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void system_init(void);
-void system_sleep(void);
+void system_shutdown(void);
 void check_battery(void);
 void check_sysfail(void);
 uint8_t get_button(void);
