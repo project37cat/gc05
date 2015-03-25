@@ -1,4 +1,4 @@
-// индикатор ионизирующей радиации 05.8a
+// индикатор ионизирующей радиации 05.8b
 //
 // AVR Toolchain 3.4.2
 // AVR Eclipse Plugin 2.3.4
@@ -62,9 +62,8 @@ SET_BIT(ADCSRA,ADSC); //запускаем АЦП
 
 uint32_t RadBuff=0;
 for(uint8_t i=0; i<GEIGER_TIME; i++) RadBuff+=RadImp[i]; //расчет фона мкР/ч
-
-BackRad=RadBuff;
 if(RadBuff>999999) RadBuff=999999; //переполнение
+BackRad=RadBuff;
 
 if(BackRad>MaxRad) MaxRad=BackRad; //фиксируем максимум фона
 
