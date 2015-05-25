@@ -1,4 +1,4 @@
-// индикатор ионизирующей радиации 05.8b
+// индикатор ионизирующей радиации 05.9a
 //
 // AVR Toolchain 3.4.2
 // AVR Eclipse Plugin 2.3.4
@@ -61,7 +61,8 @@ TCNT1 = TMR1_PRELOAD; //предзагрузка таймера для пере�
 SET_BIT(ADCSRA,ADSC); //запускаем АЦП
 
 uint32_t RadBuff=0;
-for(uint8_t i=0; i<GEIGER_TIME; i++) RadBuff+=RadImp[i]; //расчет фона мкР/ч
+for(uint8_t i=0; i<GEIGER_TIME/FastDiv; i++) RadBuff+=RadImp[i]; //расчет фона мкР/ч
+RadBuff*=FastDiv;
 if(RadBuff>999999) RadBuff=999999; //переполнение
 BackRad=RadBuff;
 
@@ -96,7 +97,8 @@ if(TimeHrs<99) //если таймер не переполнен
 		}
 	}
 
-if(LightTmr>0) //таймер подсветки
+//таймер подсветки
+if(LightTmr>0)
 	{
 	LightTmr--; //декремент таймера
 	if(LightTmr==0) DISP_LIGHT_OFF; //выключаем подсветку
@@ -141,6 +143,10 @@ if(FLASH_IS_SET) //если поднят флаг индикации импул�
 	}
 
 // обработка кнопок
+
+//если была нажата кнопка и влючена подсветка экрана перезапускаем таймер подсветки
+if(BUTTON_PRESS && DISP_LIGHT_IS_ON) LightTmr = LIGHT_TIME;
+
 static uint8_t But1Cnt; //служебный счетчик для обработки нажатия кнопки 1
 static uint8_t But1Deb; //счетчик для антидребезга на отпускание кнопки 1
 static uint8_t But2Cnt; //счетчики кнопки 2
@@ -380,13 +386,13 @@ if(Button) //если была нажата кнопка
 	{
 	ButStat=0; //сброс состояния кнопок
 
-	if(ALARM_IS_STOPPED) short_beep(20,BUZZ_2K); //если не включена тревога пищим кнопками
-
 	if(LIGHT_IS_ENABLED) //если разрешен свет
 		{
 		if(LightTmr==0) Button=0; //если таймер подсветки вышел, сбрасываем состояние кнопок
 		light_set(); //включаем подсветку экрана
 		}
+
+	if(ALARM_IS_STOPPED) short_beep(20,BUZZ_2K); //если не включена тревога пищим кнопками
 
 	if(Button && ALARM_IS_STARTED) //если активна тревога и есть нажатие кнопки
 		{
@@ -459,12 +465,15 @@ void reset_backrad(void)
 {
 for(uint8_t i=0; i<GEIGER_TIME; i++) RadImp[i]=0;
 BackRad=0;
+MaxRad=0;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void system_menu(void) //меню настроек
 {
+#define NUM_STR_MNU 8 //количество строк
+
 uint8_t currStr = 0; //номер выбранной строки 0..7
 
 lcd_clear();
@@ -474,15 +483,14 @@ while(1)
 	check_battery();
 	check_sysfail();
 
-	draw_cursor(currStr,8); //рисуем курсор-указатель для восьми строк
+	draw_cursor(currStr,NUM_STR_MNU); //рисуем курсор-указатель для восьми строк
 
-	for(uint8_t i=0; i<8; i++)
+	for(uint8_t i=0; i<NUM_STR_MNU; i++)
 		{
 		strcpy_P(StrBuff,(PGM_P)pgm_read_word(&MenuStr[i])); //загружаем из памяти строку меню
 		lcd_string(i+1,2,StrBuff); //выводим на экран
 		}
 
-	lcd_char('>',1,12); //exit
 	sprintf(StrBuff,"%2u",SoundVol); //volume
 	lcd_string(2,11,StrBuff);
 	draw_marker(3,CLICK_IS_ENABLED); //clicks
@@ -491,78 +499,20 @@ while(1)
 	sprintf(StrBuff,"%3u",AlarmLvl); //level
 	lcd_string(6,10,StrBuff);
 	draw_marker(7,ALARM_IS_ENABLED); //alarm
-	lcd_char('>',8,12); //reset
+	draw_marker(8,FastDiv/5); //fast
 
 	delay_ms(10);
 
 	switch(get_button()) //проверяем кнопки
 		{
 		case 4: But2Time=25; //уменьшаем удержание кнопки для быстрой прокрутки меню
-		case 3: if(++currStr>7) currStr=0; break; //выбираем следующий пункт меню
-		case 2: if(currStr==1 || currStr==5) But1Time=25; //уменьшаем удержание копки для пунктов
-		case 1: //настраиваем выбранный пункт меню
-			switch(currStr)
-				{
-				case 0: return; //exit
-				case 1: if(++SoundVol>20) SoundVol=1; break; //vol
-				case 2: CLICK_TOGGLE; break; //clicks
-				case 3: KBEEP_TOGGLE; break; //buttons
-				case 4: LIGHT_TOGGLE; light_set(); break; //backlight
-				case 5: if((AlarmLvl=AlarmLvl+10)>200) AlarmLvl=10; break; //level
-				case 6: ALARM_TOGGLE; break; //alarm
-				case 7: reset_menu(); return; //reset
-				}
-		break;
-		}
-	}
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void reset_menu(void) //подменю сброса
-{
-uint8_t currStr = 0;
-
-lcd_clear();
-
-while(1)
-	{
-	check_battery();
-	check_sysfail();
-
-	draw_cursor(currStr,4);
-
-	for(uint8_t i=0; i<4; i++)
-		{
-		strcpy_P(StrBuff,(PGM_P)pgm_read_word(&MenuStr[i+8])); //загружаем из памяти строки
-		lcd_string(i+1,2,StrBuff);
-		lcd_char('>',i+1,12); //рисуем символ ">" в конце каждой строки
-		}
-
-	delay_ms(10);
-
-	switch(get_button()) //проверяем кнопки
-		{
-		case 4: But2Time=25; //удерживается кн.2 - уменьшаем время проверки на удержание
-		case 3: if(++currStr>3) currStr=0; break;  //короткое нажатие кн.2 - выбор пункта
+		case 3: if(++currStr>=NUM_STR_MNU) currStr=0; break; //выбираем следующий пункт меню
 		case 2: //удержание кн.1
-		case 1: //короткое нажатие кн.1 - сбросить выбранное и выйти из меню
 			switch(currStr)
 				{
-				case 0: //reset errors
-					ErrReg = 0;
-					break;
-				case 1: //reset dose
-					DoseRad=0;
-					SumImp=0;
-					break;
-				case 2: //reset maximum
-					MaxRad=0;
-					break;
-				case 3: //reset all
+				case 0: //reset all
 					reset_backrad();
 					for(uint8_t i=0; i<101; i++) GraphImp[i]=0;
-					MaxRad=0;
 					DoseRad=0;
 					SumImp=0;
 					TimeSec=0;
@@ -570,9 +520,27 @@ while(1)
 					TimeHrs=0;
 					GraphTmr=0;
 					ErrReg=0;
+					return;
+				case 1: //уменьшаем время удержания копки для пунктов
+				case 5: But1Time=25;
+				}
+		case 1: //короткое нажатие кн.1 - настраиваем выбранный пункт меню
+			switch(currStr)
+				{
+				case 0: return; //exit/reset
+				case 1: if(++SoundVol>20) SoundVol=1; break; //vol
+				case 2: CLICK_TOGGLE; break; //clicks
+				case 3: KBEEP_TOGGLE; break; //buttons
+				case 4: LIGHT_TOGGLE; light_set(); break; //backlight
+				case 5: if((AlarmLvl=AlarmLvl+10)>200) AlarmLvl=10; break; //level
+				case 6: ALARM_TOGGLE; break; //alarm
+				case 7:
+					if(FastDiv==5) FastDiv=1;
+					else FastDiv=5;
+					reset_backrad();
 					break;
 				}
-			return;
+		break;
 		}
 	}
 }
