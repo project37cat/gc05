@@ -50,8 +50,9 @@
 
 #define TMR1_PRELOAD 49911 //65535-49911=15624  15625/15624  //1Гц
 
-#define DISP_LIGHT_ON    SET_BIT(PORTD,7); //включаем подсветку экрана
-#define DISP_LIGHT_OFF   CLR_BIT(PORTD,7); //выключаем подсветку
+#define DISP_LIGHT_ON    SET_BIT(PORTD,7) //включаем подсветку экрана
+#define DISP_LIGHT_OFF   CLR_BIT(PORTD,7) //выключаем подсветку
+#define DISP_LIGHT_IS_ON BIT_IS_SET(PIND,7) //подсветка дисплея включена
 
 #define BUZZ_START       SET_BIT(TIMSK2,OCIE2A); //разрешение прерывания пищалки
 #define BUZZ_STOP        CLR_BIT(TIMSK2,OCIE2A); //запрет прерывания пищалки
@@ -69,7 +70,7 @@ char StrBuff[13]; //буфер для строк на 13 символов
 int8_t CurrTemp; //температура
 
 uint32_t DoseRad; //доза
-uint32_t BackRad; //текущий фон
+uint32_t BackRad; //текущий фон (мощность дозы)
 uint32_t MaxRad; //максимальный фон
 uint32_t SumImp; //общее количество импульсов
 
@@ -91,8 +92,10 @@ uint8_t ButStat; //состояние кнопок
 uint8_t But1Time = BUTT_TIME_DEF; //длительность проверки на удержание кнопки
 uint8_t But2Time = BUTT_TIME_DEF;
 
-uint8_t SoundVol = 3; //громкость звуковых сигналов
-uint8_t AlarmLvl = 40; //порог тревоги
+uint8_t SoundVol = 5; //громкость звуковых сигналов
+uint8_t AlarmLvl = 50; //порог тревоги
+
+uint8_t FastDiv=1; //делитель для режима быстрых измерений, время - 75/FastDiv секунд
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,22 +154,17 @@ uint8_t ErrReg = 0b00000000; //регистр состояния ошибки
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-const char MenuStr01[] PROGMEM = "Exit"; // массив строк меню в программной памяти мк
+const char MenuStr01[] PROGMEM = "Exit/Reset"; // массив строк меню в программной памяти мк
 const char MenuStr02[] PROGMEM = "Volume";
 const char MenuStr03[] PROGMEM = "Clicks";
 const char MenuStr04[] PROGMEM = "Buttons";
 const char MenuStr05[] PROGMEM = "Light";
 const char MenuStr06[] PROGMEM = "Level";
 const char MenuStr07[] PROGMEM = "Alarm";
-const char MenuStr08[] PROGMEM = "Reset";
-const char MenuStr09[] PROGMEM = "Errors";
-const char MenuStr10[] PROGMEM = "Dose";
-const char MenuStr11[] PROGMEM = "Maximum";
-const char MenuStr12[] PROGMEM = "All";
+const char MenuStr08[] PROGMEM = "Fast";
 
 PGM_P const MenuStr[] PROGMEM =
-{ MenuStr01, MenuStr02, MenuStr03, MenuStr04, MenuStr05, MenuStr06, MenuStr07, MenuStr08,
-  MenuStr09, MenuStr10, MenuStr11, MenuStr12 };
+{ MenuStr01, MenuStr02, MenuStr03, MenuStr04, MenuStr05, MenuStr06, MenuStr07, MenuStr08 };
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +194,5 @@ void delay_ms(uint8_t val);
 void delay_us(uint8_t val);
 void hvgen_impuls(void);
 void reset_backrad(void);
-void reset_menu(void);
 void system_menu(void);
 void main_screen(uint8_t dev);
